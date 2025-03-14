@@ -1,0 +1,180 @@
+/*
+    * VIEW
+*/
+-- 사원 EMPLOYEE / 부서 DEPARTMENT / 지역 LOCATION / 국가 NATIONAL
+-- 한국에서 근무하는 사원 정보 조회 (사번, 이름, 부서명, 급여, 근무국가명)
+SELECT EMP_ID, EMP_NAME, DEPT_TITLE, SALARY, NATIONAL_NAME
+FROM EMPLOYEE 
+    JOIN DEPARTMENT ON DEPT_CODE = DEPT_ID 
+    JOIN LOCATION ON LOCATION_ID = LOCAL_CODE
+    JOIN NATIONAL USING (NATIONAL_CODE)
+WHERE NATIONAL_NAME = '한국';
+
+-- 러시아에서 근무하는 사원 정보 조회 (사번, 이름, 부서명, 급여, 근무국가명)
+SELECT EMP_ID, EMP_NAME, DEPT_TITLE, SALARY, NATIONAL_NAME
+FROM EMPLOYEE 
+    JOIN DEPARTMENT ON DEPT_CODE = DEPT_ID 
+    JOIN LOCATION ON LOCATION_ID = LOCAL_CODE
+    JOIN NATIONAL USING (NATIONAL_CODE)
+WHERE NATIONAL_NAME = '러시아';
+
+-- 일본에서 근무하는 사원 정보 조회 (사번, 이름, 부서명, 급여 근무국가명)
+SELECT EMP_ID, EMP_NAME, DEPT_TITLE, SALARY, NATIONAL_NAME
+FROM EMPLOYEE 
+    JOIN DEPARTMENT ON DEPT_CODE = DEPT_ID 
+    JOIN LOCATION ON LOCATION_ID = LOCAL_CODE
+    JOIN NATIONAL USING (NATIONAL_CODE)
+WHERE NATIONAL_NAME = '일본';
+--------------------------------------------------------------------------------
+/*
+    * VIEW 생성
+*/
+CREATE VIEW VW_EMPLOYEE 
+    AS (SELECT EMP_ID, EMP_NAME, DEPT_TITLE, SALARY, NATIONAL_NAME
+        FROM EMPLOYEE 
+            JOIN DEPARTMENT ON DEPT_CODE = DEPT_ID 
+            JOIN LOCATION ON LOCATION_ID = LOCAL_CODE
+            JOIN NATIONAL USING (NATIONAL_CODE)
+        );
+
+-- VIEW 생성 권한 부여
+-- GRANT CREATE VIEW TO C##KH;
+
+-- VW_EMPLOYEE를 사용하여 '한국'에서 근무중인 사원 정보 조회
+SELECT * FROM VW_EMPLOYEE WHERE NATIONAL_NAME = '한국';
+-- '러시아'에서 근무중인 사원 정보 조회 
+SELECT * FROM VW_EMPLOYEE WHERE NATIONAL_NAME = '러시아';
+
+-- 현재 계정으로 설정된(생성) 
+-- 뷰 목록 조회 
+-- TEXT 컬럼에 SUBQUERY 정보 확인 가능
+SELECT * FROM USER_VIEWS;
+-- 테이블 목록 조회 
+SELECT * FROM USER_TABLES;
+
+CREATE OR REPLACE VIEW VW_EMPLOYEE
+    AS (SELECT EMP_ID, EMP_NAME, DEPT_TITLE, SALARY, NATIONAL_NAME, BONUS
+        FROM EMPLOYEE 
+            JOIN DEPARTMENT ON DEPT_CODE = DEPT_ID 
+            JOIN LOCATION ON LOCATION_ID = LOCAL_CODE
+            JOIN NATIONAL USING (NATIONAL_CODE)
+        
+    );
+SELECT * FROM VW_EMPLOYEE;
+--------------------------------------------------------------------------------
+-- * 사번, 사원명, 직급명, 성별(남/여), 근무년수 정보 조회 
+SELECT 
+    EMP_ID, EMP_NAME, JOB_NAME, 
+    DECODE(SUBSTR(EMP_NO, 8, 1), 1, '남', 2, '여') "성별(남/여)", 
+    EXTRACT(YEAR FROM SYSDATE) - EXTRACT(YEAR FROM HIRE_DATE) || '년' 근무년수
+FROM EMPLOYEE
+    JOIN JOB USING (JOB_CODE);
+
+
+-- 위 쿼리문 뷰에 저장
+CREATE OR REPLACE VIEW VW_EMP_JOB (사번, 이름, 직급명, 성별, 근무년수)
+AS (SELECT 
+        EMP_ID, EMP_NAME, JOB_NAME, 
+        DECODE(SUBSTR(EMP_NO, 8, 1), 1, '남', 2, '여'), 
+        EXTRACT(YEAR FROM SYSDATE) - EXTRACT(YEAR FROM HIRE_DATE)
+    FROM EMPLOYEE
+        JOIN JOB USING (JOB_CODE)
+); 
+SELECT * FROM VW_EMP_JOB;
+
+-- 여사원 정보 조회 
+SELECT * FROM VW_EMP_JOB WHERE 성별 = '여';
+
+-- 20년 이상 근무한 사원 정보 조회
+SELECT * FROM VW_EMP_JOB WHERE 근무년수 >= 20;
+
+-- 뷰 삭제
+DROP VIEW VW_EMP_JOB;
+--------------------------------------------------------------------------------
+/*
+    생성된 뷰를 통한 DML 사용
+*/
+-- JOB 테이블 뷰 생성
+CREATE OR REPLACE VIEW VW_JOB
+AS (SELECT JOB_CODE, JOB_NAME FROM JOB);
+
+SELECT * FROM VW_JOB; -- JOB 테이블의 논리적인 테이블
+SELECT * FROM JOB;
+
+-- VW_JOB 뷰를 사용하여 데이터 추가 (INSERT)
+INSERT INTO VW_JOB VALUES ('J8', '인턴');
+
+-- VW_JOB 뷰를 사용하여 데이터 변경 (UPDATE)
+UPDATE VW_JOB SET JOB_NAME = '알바' WHERE JOB_CODE = 'J8';
+--------------------------------------------------------------------------------
+/*
+    VIEW 옵션
+*/
+-- * FORCE/NOFORCE
+CREATE VIEW VW_TEMP AS SELECT TCODE, TNAME, TCONTENT FROM TT;
+CREATE FORCE VIEW VW_TEMP AS SELECT TCODE, TNAME, TCONTENT FROM TT;
+
+SELECT * FROM VW_TEMP; 
+-- FORCE 옵션을 사용하여 뷰를 생성하였지만 
+-- 실제 데이터를 저장하는 테이블은 존재하지 않아 조회(SELECT) 시 오류 발생
+
+CREATE TABLE TT (
+    TCODE NUMBER,
+    TNAME VARCHAR2(20),
+    TCONTENT VARCHAR2(100)
+);
+SELECT * FROM VW_TEMP; -- 테이블 생성 후 조회
+
+-- * WITH CHECK OPTION 
+-- 옵션 없이 급여가 300만원 이상인 사원 정보로 뷰 생성
+CREATE VIEW VW_EMP AS (SELECT * FROM EMPLOYEE WHERE SALARY > 3000000);
+
+SELECT * FROM VW_EMP;
+
+-- 204번 사원의 급여를 200만원으로 변경 (뷰 사용, 뷰 생성 시 조건에 맞지 않는 값 사용)
+UPDATE VW_EMP SET SALARY = 2000000 WHERE EMP_ID = 204;
+
+ROLLBACK;
+
+-- 옵션 추가하여 다시 생성
+CREATE OR REPLACE VIEW VW_EMP 
+AS (SELECT * FROM EMPLOYEE WHERE SALARY > 3000000) 
+WITH CHECK OPTION;
+
+SELECT * FROM VW_EMP;
+
+UPDATE VW_EMP SET SALARY = 2000000 WHERE EMP_ID = 204; 
+-- WITH CHECK OPTION으로 서브 쿼리 조건에 부적합하여 오류 발생
+
+UPDATE VW_EMP SET SALARY = 4000000 WHERE EMP_ID = 204;
+
+-- WITH READ ONLY 
+CREATE OR REPLACE VIEW VW_EMP
+AS (SELECT * FROM EMPLOYEE WHERE SALARY >= 3000000)
+WITH READ ONLY;
+
+SELECT * FROM VW_EMP;
+
+DELETE FROM VW_EMP WHERE EMP_ID = 200;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

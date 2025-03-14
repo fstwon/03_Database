@@ -1,0 +1,103 @@
+-- [Additional SELECT - 함수]
+
+-- 1. 002 학과 코드 학생의 학번, 이름, 입학 년도를 입학 연도 오름차순으로 조회
+SELECT STUDENT_NO 학번, STUDENT_NAME 이름, TO_CHAR(ENTRANCE_DATE, 'YYYY-MM-DD') 입학년도
+FROM TB_STUDENT WHERE DEPARTMENT_NO = '002' ORDER BY ENTRANCE_DATE ASC;
+
+-- 2. 이름이 세 글자가 아닌 교수의 이름과 주민번호 조회
+SELECT PROFESSOR_NAME, PROFESSOR_SSN 
+FROM TB_PROFESSOR WHERE LENGTH(PROFESSOR_NAME) != 3;
+
+-- 3. 남자 교수 이름, 나이 출력. 나이 오름차순 정렬
+-- 2000년 이후 출생자 없고 "교수이름", "나이"로 출력
+-- 나이는 '만' 나이로 계산
+    
+SELECT 
+    PROFESSOR_NAME 교수이름, 
+    PROFESSOR_SSN SSN,
+    EXTRACT(YEAR FROM SYSDATE) - (EXTRACT(YEAR FROM TO_DATE(SUBSTR(PROFESSOR_SSN, 1, 6), 'YYMMDD')) - 100) 나이
+FROM TB_PROFESSOR
+WHERE SUBSTR(PROFESSOR_SSN, 8, 1) = 1
+ORDER BY PROFESSOR_SSN DESC;
+
+-- 4. 성을 제외한 교수 이름 출력 "이름"
+SELECT SUBSTR(PROFESSOR_NAME, 2) 이름 FROM TB_PROFESSOR;
+
+-- 5. 19살 이 후 입학자(재수생) 조회
+-- 입학연도 당시 나이 계산 = 입학연도 - 생년
+SELECT 
+    STUDENT_NO, STUDENT_NAME
+FROM TB_STUDENT
+WHERE EXTRACT(YEAR FROM ENTRANCE_DATE) - EXTRACT(YEAR FROM TO_DATE(SUBSTR(STUDENT_SSN, 1, 6), 'RRMMDD')) > 19;
+
+-- 6. 2020년 크리스마스의 요일 조회
+SELECT TO_CHAR(TO_DATE('201225', 'YYMMDD'), 'DAY') FROM DUAL;
+
+-- 7. 년, 월, 일 의미 
+/*
+    TO_DATE('99/10/11', 'YY/MM/DD') - 2099년 10월 11일
+    TO_DATE('49/10/11', 'YY/MM/DD') - 2049년 10월 11일
+    TO_DATE('99/10/11', 'RR/MM/DD') - 1999년 10월 11일
+    TO_DATE('49/10/11', 'RR/MM/DD') - 2049년 10월 11일
+*/
+
+-- 8. 2000년도 이 후 입학자의 학번은 'A'로 시작
+-- 2000년도 이전 학번 학생의 학번, 이름 
+SELECT STUDENT_NO, STUDENT_NAME 
+FROM TB_STUDENT
+WHERE STUDENT_NO NOT LIKE 'A%';
+
+-- 9. A517178 한아름 학생의 총 학점
+-- "평점", 반올림하여 소수 한자리까지만 표시
+-- TB_GRADE STUDENT_NO
+SELECT ROUND(AVG(POINT), 1) 평점 FROM TB_GRADE WHERE STUDENT_NO = 'A517178';
+
+-- 10. 학과별 학생 수 조회, 학과번호, 학생수(명)의 헤더
+SELECT DEPARTMENT_NO 학과번호, COUNT(*) 
+FROM TB_STUDENT GROUP BY DEPARTMENT_NO ORDER BY 1;
+
+-- 11. 지도 교수를 배정 받지 못한 학생의 수 조회 
+-- COACH_PROFESSOR_NO
+SELECT COUNT(*) FROM TB_STUDENT WHERE COACH_PROFESSOR_NO IS NULL;
+
+-- 12. A112113 김고운 년도 별 평점 조회 
+-- "년도", "년도 별 평점"
+-- 점수는 반올림 소수점 이하 한자리까지 표시 
+SELECT SUBSTR(TERM_NO, 1, 4) 년도, ROUND(AVG(POINT), 1) "년도 별 평점" 
+FROM TB_GRADE WHERE STUDENT_NO = 'A112113'
+GROUP BY SUBSTR(TERM_NO, 1, 4);
+
+-- 13. 학과 별 휴학생 수
+SELECT DEPARTMENT_NO 학과코드명, COUNT(DECODE(ABSENCE_YN, 'Y', 1, 'N', NULL)) "휴학생 수" 
+FROM TB_STUDENT
+GROUP BY DEPARTMENT_NO ORDER BY DEPARTMENT_NO;
+
+-- 14. 동명이인 이름 조회 
+SELECT STUDENT_NAME 동일이름, COUNT(*) 
+FROM TB_STUDENT 
+GROUP BY STUDENT_NAME HAVING COUNT(*) > 1 ORDER BY STUDENT_NAME;
+
+-- 15. A112113 김고운 학생의 년도, 학기 별 평점, 년도 별 누적 평점, 총 평점 조회
+-- 평점은 소수점 한자리까지 반올림
+SELECT 
+    NVL(SUBSTR(TERM_NO, 1, 4), ' ') 년도,
+    NVL(SUBSTR(TERM_NO, 5, 2), ' ') 학기,
+    ROUND(AVG(POINT), 1) 평점 
+FROM TB_GRADE
+WHERE STUDENT_NO = 'A112113'
+GROUP BY ROLLUP(SUBSTR(TERM_NO, 1, 4), SUBSTR(TERM_NO, 5, 2))
+ORDER BY SUBSTR(TERM_NO, 1, 4);
+
+
+
+
+
+
+
+
+
+
+
+
+
+

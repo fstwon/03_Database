@@ -1,0 +1,128 @@
+/*
+    * ALTER
+*/
+/*
+    컬럼 추가/수정/삭제
+*/
+/*
+    컬럼 추가
+*/
+-- DEPT_TABLE
+ALTER TABLE DEPT_TABLE ADD CNAME VARCHAR(20);
+
+SELECT * FROM DEPT_TABLE;
+
+-- DEPT_TABLE 테이블에 LNAME VARCHAR2(20) 컬럼 추가, 기본값을 지정 : '한국'
+ALTER TABLE DEPT_TABLE ADD LNAME VARCHAR2(20) DEFAULT '한국';
+
+/*
+    컬럼 수정
+*/
+-- DEPT_TABLE 테이블의 DEPT_ID 컬럼 변경
+ALTER TABLE DEPT_TABLE MODIFY DEPT_ID CHAR(5);
+
+-- DEPT_TABLE 테이블의 DEPT_ID 컬럼의 데이터를 NUMBER로 변경
+ALTER TABLE DEPT_TABLE MODIFY DEPT_ID NUMBER; 
+-- 이미 문자 형태로 데이터가 저장되어 있어 다른 타입으로는 변경 불가
+
+-- DEPT_TABLE 테이블의 DEPT_TITLE 컬럼 변경
+-- 데이터 크기 변경
+ALTER TABLE DEPT_TABLE MODIFY DEPT_TITLE VARCHAR2(10); 
+-- 이미 저장된 데이터의 크기가 변경 크기 초과 용량으로 저장되어 있어 
+-- 기존 데이터 크기 미만으로 크기 변경 불가
+
+-- 데이터 타입 : VARCHAR2(35) -> VARCHAR2(50)
+ALTER TABLE DEPT_TABLE MODIFY DEPT_TITLE VARCHAR2(50);
+-- 기존 데이터 크기 이상으로 변경은 가능
+
+-- EMP_TABLE 테이블의 SALARY 컬럼 변경
+-- 데이터 타입 : NUMBER -> VARCHAR2(50)
+ALTER TABLE EMP_TABLE MODIFY SALARY VARCHAR2(50);
+
+-- 컬럼 다중 변경
+-- DEPT_TABLE 테이블의 
+-- DEPT_TITLE 컬럼은 VARCHAR2(55);
+-- LNAME 컬럼은 기본 값을 '코리아'로 변경 
+ALTER TABLE DEPT_TABLE 
+    MODIFY DEPT_TITLE VARCHAR2(55)
+    MODIFY LNAME DEFAULT '코리아';
+    
+SELECT * FROM DEPT_TABLE;
+
+/*
+    * 컬럼 삭제
+*/
+-- DEPT_TABLE 테이블을 DEPT_COPY 테이블로 복제 
+CREATE TABLE DEPT_COPY AS (SELECT * FROM DEPT_TABLE);
+SELECT * FROM DEPT_COPY;
+
+-- DEPT_COPY 테이블의 LNAME 컬럼 삭제
+ALTER TABLE DEPT_COPY DROP COLUMN LNAME;
+
+ALTER TABLE DEPT_COPY DROP COLUMN CNAME;
+ALTER TABLE DEPT_COPY DROP COLUMN LOCATION_ID;
+ALTER TABLE DEPT_COPY DROP COLUMN DEPT_TITLE;
+ALTER TABLE DEPT_COPY DROP COLUMN DEPT_ID; -- 오류
+--------------------------------------------------------------------------------
+/*
+    * 제약조건 추가/삭제
+*/
+
+-- DEPT_TABLE 테이블
+ALTER TABLE DEPT_TABLE 
+    -- DEPT_ID 컬럼에 기본 키 추가 (PK), DT_PK
+    ADD CONSTRAINT DT_PK PRIMARY KEY (DEPT_ID)
+    -- DEPT_TITLE 컬럼에 UNIQUE 추가, DT_UQ
+    ADD CONSTRAINT DT_UQ UNIQUE (DEPT_TITLE)
+    -- LNAME 컬럼에 NOT NULL 추가
+    MODIFY LNAME NOT NULL;
+
+-- DEPT_TABLE 테이블에서 기본 키 삭제
+ALTER TABLE DEPT_TABLE DROP CONSTRAINT DT_PK;
+
+ALTER TABLE DEPT_TABLE DROP CONSTRAINT DT_UQ MODIFY LNAME NULL;
+
+/*
+    컬럼명, 제약조건명, 테이블명 변경
+*/
+-- 1) 컬럼명 변경
+-- DEPT_TABLE 테이블의 DEPT_TITLE 컬럼 이름을 DEPT_NAME으로 변경
+ALTER TABLE DEPT_TABLE RENAME COLUMN DEPT_TITLE TO DEPT_NAME;
+
+-- 2) 제약조건 변경
+-- DEPT_TABLE 테이블의 DEPT_ID의 NOT NULL 제약조건명을 DT_DEPTID_NN으로 변경
+ALTER TABLE DEPT_TABLE RENAME CONSTRAINT SYS_C008444 TO DT_DEPTID_NN;
+
+-- 3) 테이블명 변경 
+-- DEPT_TABLE 명을 DEPT_END로 변경
+ALTER TABLE DEPT_TABLE RENAME TO DEPT_END;
+SELECT * FROM DEPT_END;
+
+/*
+    삭제
+*/
+-- DEPT_END 테이블 삭제
+DROP TABLE DEPT_END;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

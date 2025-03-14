@@ -1,0 +1,10 @@
+-- TEST 테이블 추가
+CREATE TABLE TEST (
+    TEST_ID NUMBER,
+    TEST_NAME VARCHAR2(10)
+);
+
+-- 샘플 데이터 추가
+INSERT INTO TEST VALUES (100, '테스트');
+
+COMMIT;

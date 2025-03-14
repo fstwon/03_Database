@@ -1,0 +1,194 @@
+/*
+    * INSERT INTO TABLE VALUES (DATA, DATA, DATA, ...)
+*/
+SELECT * FROM EMPLOYEE;
+
+INSERT INTO EMPLOYEE 
+    VALUES (900, '박영철', '990307-2000000', 'mrpark@email.com', '01012341234', 'D4', 'J4', 3000000, 0.3, NULL, SYSDATE, NULL, 'N');
+--------------------------------------------------------------------------------
+/*
+    * INSERT INTO TABLE (COLUMN, COLUMN, COLUMN, ...) VALUES (DATA, DATA, DATA, ...)
+*/
+-- EMPLOYEE 테이블에 사번, 사원명, 주민번호, 이메일, 직급코드 데이터만 가지고 있는 사원 정보 추가
+INSERT INTO EMPLOYEE (EMP_ID, EMP_NAME, EMP_NO, EMAIL, JOB_CODE)
+    VALUES (901, '오라클', '880909-1000000', 'oracle00@kh.or.kr', 'J7');
+
+SELECT * FROM EMPLOYEE;
+--------------------------------------------------------------------------------
+/*
+    * INSERT INTO 테이블명 (SUBQUERY);
+*/
+-- EMP01 이라는 테이블에 사번 EMP_ID, 사원명 EMP_NAME, 부서명 DEPT_TITLE 을 저장하는 테이블
+CREATE TABLE EMP01 (
+    EMP_ID NUMBER,
+    EMP_NAME VARCHAR2(20),
+    DEPT_TITLE VARCHAR2(20)
+);
+
+SELECT * FROM EMP01;
+
+-- 전체 사원의 사번, 사원명, 부서명 조회 
+SELECT EMP_ID, EMP_NAME, DEPT_TITLE FROM EMPLOYEE, DEPARTMENT WHERE DEPT_CODE = DEPT_ID(+);
+-- SELECT EMP_ID, EMP_NAME, DEPT_TITLE FROM EMPLOYEE LEFT JOIN DEPARTMENT ON DEPT_CODE = DEPT_ID;
+-- 위 쿼리문 결과를 EMP01 테이블에 데이터 추가
+INSERT INTO EMP01 
+    (SELECT EMP_ID, EMP_NAME, DEPT_TITLE FROM EMPLOYEE, DEPARTMENT WHERE DEPT_CODE = DEPT_ID(+));
+SELECT * FROM EMP01;
+--------------------------------------------------------------------------------
+/*
+    * INSERT ALL
+*/
+
+-- EMP_DEPT 테이블 : 사번, 사원명, 부서코드, 입사일
+CREATE TABLE EMP_DEPT 
+    AS (SELECT EMP_ID, EMP_NAME, DEPT_CODE, HIRE_DATE FROM EMPLOYEE WHERE 1 = 0); -- 1 = 0 => FALSE, 데이터 없이 컬럼 정보만 복제하기 위해 사용
+
+SELECT * FROM EMP_DEPT;
+
+-- EMP_MANAGER 테이블 : 사번, 사원명, 사수사번 
+CREATE TABLE EMP_MANAGER AS
+    (SELECT EMP_ID, EMP_NAME, MANAGER_ID FROM EMPLOYEE WHERE 1 = 0);
+    
+SELECT * FROM EMP_MANAGER;
+
+-- 부서코드가 'D1'인 사원의 사번, 사원명, 부서코드, 사수사번, 입사일 정보 조회 
+
+SELECT EMP_ID, EMP_NAME, DEPT_CODE, MANAGER_ID, HIRE_DATE FROM EMPLOYEE WHERE DEPT_CODE = 'D1';
+
+INSERT ALL 
+    INTO EMP_DEPT VALUES (EMP_ID, EMP_NAME, DEPT_CODE, HIRE_DATE)
+    INTO EMP_MANAGER VALUES (EMP_ID, EMP_NAME, MANAGER_ID)
+    (SELECT EMP_ID, EMP_NAME, DEPT_CODE, MANAGER_ID, HIRE_DATE FROM EMPLOYEE WHERE DEPT_CODE = 'D1');
+    
+SELECT * FROM EMP_MANAGER;
+SELECT * FROM EMP_DEPT;
+--------------------------------------------------------------------------------
+/*
+    * UPDATE
+*/
+-- DEPT_TABLE 테이블에 DEPARTMENT 테이블 복제
+CREATE TABLE DEPT_TABLE AS (SELECT * FROM DEPARTMENT);
+
+SELECT * FROM DEPT_TABLE;
+
+-- 부서코드가 'D1'인 부서의 부서명을 '인사팀'으로 변경
+UPDATE DEPT_TABLE SET DEPT_TITLE = '인사팀' WHERE DEPT_ID = 'D1';
+
+-- 부서코드가 'D9'인 부서의 부서명을 '전략기획팀'으로 변경
+UPDATE DEPT_TABLE SET DEPT_TITLE = '전략기획팀' WHERE DEPT_ID = 'D9';
+
+SELECT * FROM DEPT_TABLE;
+
+-- EMPLOYEE 테이블을 EMP_TABLE로 복제 (사번, 이름, 부서코드, 급여, 보너스)
+CREATE TABLE EMP_TABLE AS (SELECT EMP_ID, EMP_NAME, DEPT_CODE, SALARY, BONUS FROM EMPLOYEE);
+
+SELECT * FROM EMP_TABLE;
+
+-- 사번이 900번인 사원의 급여를 400만원으로 인상
+UPDATE EMP_TABLE SET SALARY = 4000000 WHERE EMP_ID = 900;
+
+SELECT * FROM EMP_TABLE WHERE EMP_ID = 900;
+
+-- 대북혼 사원의 급여를 500만원, 보너스를 0.2로 변경
+UPDATE EMP_TABLE SET SALARY = 5000000, BONUS = 0.2 WHERE EMP_NAME = '대북혼';
+
+SELECT * FROM EMP_TABLE WHERE EMP_NAME = '대북혼';
+
+-- 전체 사원의 급여를 기존 급여 + (기존 급여 * 1.1) 인상 
+UPDATE EMP_TABLE SET SALARY = SALARY * 1.1;
+
+SELECT * FROM EMP_TABLE;
+--------------------------------------------------------------------------------
+/*
+    * UPDATE 문에 서브쿼리 사용
+*/
+-- 방명수 사원의 급여와 보너스를 유재식 사원의 급여와 보너스 값과 동일하게 변경
+SELECT SALARY, BONUS FROM EMP_TABLE WHERE EMP_NAME = '유재식';
+
+UPDATE EMP_TABLE 
+    SET 
+        SALARY = (SELECT SALARY FROM EMP_TABLE WHERE EMP_NAME = '유재식'),
+        BONUS = (SELECT BONUS FROM EMP_TABLE WHERE EMP_NAME = '유재식')
+    WHERE EMP_NAME = '방명수';
+SELECT * FROM EMP_TABLE WHERE EMP_NAME = '방명수';
+
+SELECT * FROM EMP_TABLE WHERE (SALARY, BONUS) = (SELECT SALARY, BONUS FROM EMP_TABLE WHERE EMP_NAME = '유재식');
+
+UPDATE EMP_TABLE 
+    SET (SALARY, BONUS) = (SELECT SALARY, BONUS FROM EMP_TABLE WHERE EMP_NAME = '유재식')
+WHERE EMP_NAME = '윤은해';
+
+SELECT SALARY, BONUS FROM EMP_TABLE WHERE EMP_NAME = '윤은해';
+
+-- ASIA 지역에서 근무중인 사원들의 보너스를 0.3으로 변경 
+-- 1. ASIA 지역 정보 조회
+SELECT * FROM LOCATION WHERE LOCAL_NAME LIKE 'ASIA%';
+
+-- 2. ASIA 지역의 부서 정보 조회
+SELECT * 
+FROM DEPARTMENT 
+    JOIN LOCATION ON LOCATION_ID = LOCAL_CODE 
+WHERE LOCAL_NAME LIKE 'ASIA%';
+
+-- 3. ASIA 지역의 부서에 속한 사원 정보 조회 
+SELECT EMP_ID FROM EMP_TABLE 
+    JOIN DEPARTMENT ON DEPT_CODE = DEPT_ID
+    JOIN LOCATION ON LOCATION_ID = LOCAL_CODE
+WHERE LOCAL_NAME LIKE 'ASIA%';
+
+-- 다중행 서브쿼리 (N행 1열)
+-- * 해당 사원들의 보너스를 0.3으로 변경
+UPDATE EMP_TABLE 
+    SET BONUS = 0.3
+WHERE EMP_ID 
+    IN (
+        SELECT EMP_ID FROM EMP_TABLE
+            JOIN DEPARTMENT ON DEPT_CODE = DEPT_ID
+            JOIN LOCATION ON LOCATION_ID = LOCAL_CODE
+        WHERE LOCAL_NAME LIKE 'ASIA%'
+        );
+
+SELECT * FROM EMP_TABLE;
+
+COMMIT;
+--------------------------------------------------------------------------------
+-- EMPLOYEE 테이블의 모든 데이터 삭제 
+DELETE FROM EMPLOYEE;
+
+SELECT * FROM EMPLOYEE;
+ROLLBACK;
+
+-- 901번 사원의 데이터 삭제
+SELECT * FROM EMPLOYEE WHERE EMP_ID = 901;
+DELETE FROM EMPLOYEE WHERE EMP_ID = 901;
+
+-- 900번 사원의 이름으로 데이터 삭제
+SELECT * FROM EMPLOYEE WHERE EMP_NAME = '박영철';
+DELETE FROM EMPLOYEE WHERE EMP_NAME = '박영철';
+
+COMMIT;
+
+-- 부서 테이블에서 부서 코드가 'D1'인 부서 삭제
+SELECT * FROM DEPARTMENT WHERE DEPT_ID = 'D1';
+DELETE FROM DEPARTMENT WHERE DEPT_ID = 'D1';
+
+
+ROLLBACK;
+-- 외래키가 설정되어 있는 경우 사용중인 데이터가 존재하면 삭제 불가 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

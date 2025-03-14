@@ -1,0 +1,28 @@
+/*
+    1. TB_CLASS_TYPE 테이블에 데이터 입력
+*/
+INSERT INTO TB_CLASS_TYPE VALUES ('01', '전공필수');
+INSERT INTO TB_CLASS_TYPE VALUES ('02', '전공선택'); 
+INSERT INTO TB_CLASS_TYPE VALUES ('03', '교양필수');
+INSERT INTO TB_CLASS_TYPE VALUES ('04', '교양선택');
+INSERT INTO TB_CLASS_TYPE VALUES ('05', '논문지도');
+
+/*
+    2. 학생일반정보 테이블 생성
+*/
+CREATE TABLE TB_학생일반정보 
+    AS (SELECT STUDENT_NO, STUDENT_NAME, STUDENT_ADDRESS FROM TB_STUDENT);
+    
+/*
+    3. 국어국문학과 정보만 포함된 학과정보테이블 생성
+*/
+CREATE TABLE TB_국어국문학과 
+    AS (
+        SELECT 
+            STUDENT_NO, STUDENT_NAME, 
+            SUBSTR(STUDENT_SSN, 1, 4), PROFESSOR_NAME 
+        FROM TB_STUDENT 
+            JOIN TB_PROFESSOR ON COACH_PROFESSOR_NO = PROFESSOR_NO
+            JOIN TB_DEPARTMENT USING (DEPARTMENT_NO)
+        WHERE DEPARTMENT_NAME = '국어국문학과'
+    )
